@@ -1,11 +1,12 @@
 {
-  "schemaVersion": 1,
   "id": "sqlite-doc-store",
   "name": "SQLite Document Store",
-  "description": "Buffered document storage for OpenClaw using SQLite, FTS5, chunking, and future sqlite-vec support.",
-  "entry": "./index.ts",
-  "config": {
+  "description": "Buffered document storage for OpenClaw using SQLite, FTS5, chunking, optional OpenAI-compatible embeddings, and future sqlite-vec support.",
+  "version": "0.1.0",
+  "kind": "extension",
+  "configSchema": {
     "type": "object",
+    "additionalProperties": false,
     "properties": {
       "dbPath": {
         "type": "string",
@@ -40,34 +41,83 @@
       "sqliteVecExtensionPath": {
         "type": "string",
         "description": "Optional path to the sqlite-vec extension shared library."
+      },
+      "embedding": {
+        "type": "object",
+        "additionalProperties": false,
+        "description": "Optional OpenAI-compatible embeddings provider used to generate chunk embeddings during save/backfill.",
+        "properties": {
+          "enabled": {
+            "type": "boolean",
+            "default": false,
+            "description": "Enable chunk embedding generation. When false, documents are stored without calling the embeddings API."
+          },
+          "apiUrl": {
+            "type": "string",
+            "default": "https://api.openai.com/v1/embeddings",
+            "description": "Full OpenAI-compatible embeddings endpoint URL."
+          },
+          "apiKey": {
+            "type": "string",
+            "description": "Bearer token for the OpenAI-compatible embeddings API."
+          },
+          "model": {
+            "type": "string",
+            "default": "text-embedding-3-small",
+            "description": "Embedding model name sent to the upstream API."
+          },
+          "timeoutMs": {
+            "type": "integer",
+            "minimum": 1000,
+            "maximum": 120000,
+            "default": 30000,
+            "description": "HTTP timeout for embedding requests in milliseconds."
+          },
+          "batchSize": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 128,
+            "default": 32,
+            "description": "Number of chunk texts batched into one embeddings request."
+          },
+          "dimensions": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "Optional embedding dimensionality, for providers/models that support overriding dimensions."
+          }
+        },
+        "required": []
       }
-    }
+    },
+    "required": []
   },
-  "ui": {
-    "hints": {
-      "dbPath": {
-        "label": "Database Path",
-        "help": "SQLite file used as the buffered document store."
-      },
-      "defaultChunkTargetTokens": {
-        "label": "Default Chunk Target Tokens",
-        "advanced": true
-      },
-      "defaultChunkOverlapTokens": {
-        "label": "Default Chunk Overlap Tokens",
-        "advanced": true
-      },
-      "enableFts": {
-        "label": "Enable FTS5"
-      },
-      "vectorMode": {
-        "label": "Vector Mode",
-        "advanced": true
-      },
-      "sqliteVecExtensionPath": {
-        "label": "sqlite-vec Extension Path",
-        "advanced": true
-      }
+  "uiHints": {
+    "dbPath": {
+      "label": "Database Path",
+      "help": "SQLite file used as the buffered document store."
+    },
+    "defaultChunkTargetTokens": {
+      "label": "Default Chunk Target Tokens",
+      "advanced": true
+    },
+    "defaultChunkOverlapTokens": {
+      "label": "Default Chunk Overlap Tokens",
+      "advanced": true
+    },
+    "enableFts": {
+      "label": "Enable FTS5"
+    },
+    "vectorMode": {
+      "label": "Vector Mode",
+      "advanced": true
+    },
+    "sqliteVecExtensionPath": {
+      "label": "sqlite-vec Extension Path",
+      "advanced": true
+    },
+    "embedding": {
+      "label": "Embeddings Provider",
+      "help": "OpenAI-compatible endpoint used to generate chunk embeddings."
     }
   }
 }

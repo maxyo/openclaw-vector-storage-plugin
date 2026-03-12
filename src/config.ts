@@ -1,8 +1,12 @@
-import type { PluginConfig } from './types.js';
+import type { EmbeddingProviderConfig, PluginConfig } from './types.js';
 
 const DEFAULT_DB_PATH = '/config/.openclaw/sqlite-doc-store/documents.sqlite';
 const DEFAULT_CHUNK_TARGET_TOKENS = 900;
 const DEFAULT_CHUNK_OVERLAP_TOKENS = 120;
+const DEFAULT_EMBEDDING_API_URL = 'https://api.openai.com/v1/embeddings';
+const DEFAULT_EMBEDDING_MODEL = 'text-embedding-3-small';
+const DEFAULT_EMBEDDING_TIMEOUT_MS = 30000;
+const DEFAULT_EMBEDDING_BATCH_SIZE = 32;
 
 function readInteger(
   value: unknown,
@@ -22,13 +26,34 @@ function readInteger(
   return fallback;
 }
 
-export function resolveConfig(raw: unknown): PluginConfig {
-  const cfg = typeof raw === 'object' && raw !== null ? (raw as Record<string, unknown>) : {};
+function readRecord(value: unknown): Record<string, unknown> {
+  return typeof value === 'object' && value !== null ? (value as Record<string, unknown>) : {};
+}
 
-  const sqliteVecExtensionPath =
-    typeof cfg['sqliteVecExtensionPath'] === 'string' && cfg['sqliteVecExtensionPath'].trim()
-      ? cfg['sqliteVecExtensionPath']
-      : undefined;
+function readNonEmptyString(value: unknown): string | undefined {
+  return typeof value === 'string' && value.trim() ? value.trim() : undefined;
+}
+
+function resolveEmbeddingConfig(raw: unknown): EmbeddingProviderConfig {
+  const cfg = readRecord(raw);
+  const apiKey = readNonEmptyString(cfg['apiKey']);
+  const dimensions = cfg['dimensions'];
+
+  return {
+    enabled: cfg['enabled'] === true,
+    apiUrl: readNonEmptyString(cfg['apiUrl']) ?? DEFAULT_EMBEDDING_API_URL,
+    ...(apiKey ? { apiKey } : {}),
+    model: readNonEmptyString(cfg['model']) ?? DEFAULT_EMBEDDING_MODEL,
+    timeoutMs: readInteger(cfg['timeoutMs'], DEFAULT_EMBEDDING_TIMEOUT_MS, 1000, 120000),
+    batchSize: readInteger(cfg['batchSize'], DEFAULT_EMBEDDING_BATCH_SIZE, 1, 128),
+    ...(typeof dimensions === 'number' && Number.isInteger(dimensions) && dimensions > 0 ? { dimensions } : {}),
+  };
+}
+
+export function resolveConfig(raw: unknown): PluginConfig {
+  const cfg = readRecord(raw);
+
+  const sqliteVecExtensionPath = readNonEmptyString(cfg['sqliteVecExtensionPath']);
 
   return {
     dbPath:
@@ -38,5 +63,6 @@ export function resolveConfig(raw: unknown): PluginConfig {
     enableFts: cfg['enableFts'] !== false,
     vectorMode: cfg['vectorMode'] === 'sqlite-vec' ? 'sqlite-vec' : 'disabled',
     ...(sqliteVecExtensionPath ? { sqliteVecExtensionPath } : {}),
+    embedding: resolveEmbeddingConfig(cfg['embedding']),
   };
 }

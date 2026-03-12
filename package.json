@@ -2,7 +2,7 @@
   "name": "openclaw-plugin-sqlite-doc-store",
   "version": "0.1.0",
   "private": true,
-  "description": "OpenClaw plugin for buffered document storage on SQLite with chunking, FTS search, and future sqlite-vec support.",
+  "description": "OpenClaw plugin for buffered document storage on SQLite with chunking, FTS search, ingestion scripts, embeddings, and future sqlite-vec support.",
   "license": "MIT",
   "type": "module",
   "main": "index.ts",
@@ -26,6 +26,7 @@
     "docs",
     "src",
     "sql",
+    "scripts",
     "tests",
     "tsconfig.json",
     "eslint.config.js",
@@ -35,13 +36,20 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "lint": "eslint .",
     "test": "vitest run",
-    "check": "npm run typecheck && npm run lint && npm run test"
+    "check": "npm run typecheck && npm run lint && npm run test",
+    "ingest:jsonl": "tsx scripts/ingest-jsonl.ts",
+    "ingest:url": "tsx scripts/ingest-url.ts",
+    "embeddings:backfill": "tsx scripts/backfill-embeddings.ts"
+  },
+  "dependencies": {
+    "cheerio": "^1.1.2"
   },
   "devDependencies": {
     "@types/node": "^22.13.14",
     "@typescript-eslint/eslint-plugin": "^8.28.0",
     "@typescript-eslint/parser": "^8.28.0",
     "eslint": "^9.22.0",
+    "tsx": "^4.19.3",
     "typescript": "^5.8.2",
     "vitest": "^3.1.1"
   },

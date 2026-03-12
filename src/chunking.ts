@@ -1,5 +1,11 @@
 import type { ChunkingOptions, ChunkingResult } from './types.js';
 
+interface ParagraphSlice {
+  text: string;
+  start: number;
+  end: number;
+}
+
 function approximateTokenCount(text: string): number {
   const normalized = text.trim();
   if (!normalized) {
@@ -9,11 +15,26 @@ function approximateTokenCount(text: string): number {
   return Math.max(1, Math.round(words.length * 1.33));
 }
 
-function splitIntoParagraphs(text: string): string[] {
-  return text
+function splitIntoParagraphs(text: string): ParagraphSlice[] {
+  const parts = text
     .split(/\n\s*\n/gu)
     .map((part) => part.trim())
     .filter(Boolean);
+
+  const paragraphs: ParagraphSlice[] = [];
+  let cursor = 0;
+
+  for (const part of parts) {
+    const start = text.indexOf(part, cursor);
+    if (start < 0) {
+      continue;
+    }
+    const end = start + part.length;
+    paragraphs.push({ text: part, start, end });
+    cursor = end;
+  }
+
+  return paragraphs;
 }
 
 export function chunkDocument(text: string, options: ChunkingOptions): ChunkingResult[] {
@@ -28,36 +49,47 @@ export function chunkDocument(text: string, options: ChunkingOptions): ChunkingR
   }
 
   const chunks: ChunkingResult[] = [];
-  let currentParts: string[] = [];
+  let currentParts: ParagraphSlice[] = [];
   let currentTokens = 0;
 
   const flush = (): void => {
-    const chunkText = currentParts.join('\n\n').trim();
+    const chunkText = currentParts.map((part) => part.text).join('\n\n').trim();
     if (!chunkText) {
       return;
     }
+
+    const first = currentParts[0];
+    const last = currentParts[currentParts.length - 1];
+    if (!first || !last) {
+      return;
+    }
+
     chunks.push({
       chunkIndex: chunks.length,
       text: chunkText,
       tokenCount: approximateTokenCount(chunkText),
+      charCount: chunkText.length,
+      startsAtChar: first.start,
+      endsAtChar: last.end,
+      chunkKind: 'body',
     });
   };
 
   for (const paragraph of paragraphs) {
-    const paragraphTokens = approximateTokenCount(paragraph);
+    const paragraphTokens = approximateTokenCount(paragraph.text);
     const wouldOverflow = currentTokens > 0 && currentTokens + paragraphTokens > options.targetTokens;
 
     if (wouldOverflow) {
       flush();
 
-      const overlapParts: string[] = [];
+      const overlapParts: ParagraphSlice[] = [];
       let overlapTokens = 0;
       for (let i = currentParts.length - 1; i >= 0; i -= 1) {
         const candidate = currentParts[i];
         if (!candidate) {
           continue;
         }
-        const candidateTokens = approximateTokenCount(candidate);
+        const candidateTokens = approximateTokenCount(candidate.text);
         if (overlapParts.length > 0 && overlapTokens + candidateTokens > options.overlapTokens) {
           break;
         }

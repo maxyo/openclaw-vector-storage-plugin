@@ -18,7 +18,7 @@ export function createPlugin(rawConfig: unknown) {
 
   return {
     name: 'sqlite-doc-store',
-    description: 'Buffered SQLite document store with chunking and FTS search.',
+    description: 'Buffered SQLite document store with chunking, FTS search, and optional embeddings.',
     config,
     api,
   };
@@ -30,4 +30,10 @@ export { resolveConfig } from './src/config.js';
 export { openDatabase } from './src/database.js';
 export { chunkDocument, normalizeDocumentText } from './src/chunking.js';
 export { createSqliteDocStoreApi } from './src/api.js';
+export { createEmbeddingClient, OpenAICompatibleEmbeddingClient } from './src/embeddings.js';
+export { ingestDocuments, backfillEmbeddings } from './src/ingest/pipeline.js';
+export { validateSaveDocumentInput } from './src/ingest/validate.js';
+export { fetchUrlDocument } from './src/ingest/url-fetch.js';
+export { extractContentFromBody } from './src/ingest/extract.js';
+export { getSourceProfile } from './src/ingest/source-profiles.js';
 export type * from './src/types.js';
