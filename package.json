@@ -1,0 +1,53 @@
+{
+  "name": "openclaw-plugin-sqlite-doc-store",
+  "version": "0.1.0",
+  "private": true,
+  "description": "OpenClaw plugin for buffered document storage on SQLite with chunking, FTS search, and future sqlite-vec support.",
+  "license": "MIT",
+  "type": "module",
+  "main": "index.ts",
+  "engines": {
+    "node": ">=22"
+  },
+  "keywords": [
+    "openclaw",
+    "plugin",
+    "sqlite",
+    "documents",
+    "fts",
+    "vector-search",
+    "rag"
+  ],
+  "files": [
+    "index.ts",
+    "openclaw.plugin.json",
+    "README.md",
+    "LICENSE",
+    "docs",
+    "src",
+    "sql",
+    "tests",
+    "tsconfig.json",
+    "eslint.config.js",
+    "vitest.config.ts"
+  ],
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "lint": "eslint .",
+    "test": "vitest run",
+    "check": "npm run typecheck && npm run lint && npm run test"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.14",
+    "@typescript-eslint/eslint-plugin": "^8.28.0",
+    "@typescript-eslint/parser": "^8.28.0",
+    "eslint": "^9.22.0",
+    "typescript": "^5.8.2",
+    "vitest": "^3.1.1"
+  },
+  "openclaw": {
+    "extensions": [
+      "./index.ts"
+    ]
+  }
+}

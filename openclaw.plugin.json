@@ -1,0 +1,73 @@
+{
+  "schemaVersion": 1,
+  "id": "sqlite-doc-store",
+  "name": "SQLite Document Store",
+  "description": "Buffered document storage for OpenClaw using SQLite, FTS5, chunking, and future sqlite-vec support.",
+  "entry": "./index.ts",
+  "config": {
+    "type": "object",
+    "properties": {
+      "dbPath": {
+        "type": "string",
+        "default": "/config/.openclaw/sqlite-doc-store/documents.sqlite",
+        "description": "Path to the SQLite database file."
+      },
+      "defaultChunkTargetTokens": {
+        "type": "integer",
+        "minimum": 100,
+        "maximum": 4000,
+        "default": 900,
+        "description": "Default target chunk size in approximate tokens."
+      },
+      "defaultChunkOverlapTokens": {
+        "type": "integer",
+        "minimum": 0,
+        "maximum": 1000,
+        "default": 120,
+        "description": "Default overlap between adjacent chunks in approximate tokens."
+      },
+      "enableFts": {
+        "type": "boolean",
+        "default": true,
+        "description": "Enable SQLite FTS5 indexes for keyword search."
+      },
+      "vectorMode": {
+        "type": "string",
+        "enum": ["disabled", "sqlite-vec"],
+        "default": "disabled",
+        "description": "Vector search mode. sqlite-vec support is scaffolded but not enabled by default yet."
+      },
+      "sqliteVecExtensionPath": {
+        "type": "string",
+        "description": "Optional path to the sqlite-vec extension shared library."
+      }
+    }
+  },
+  "ui": {
+    "hints": {
+      "dbPath": {
+        "label": "Database Path",
+        "help": "SQLite file used as the buffered document store."
+      },
+      "defaultChunkTargetTokens": {
+        "label": "Default Chunk Target Tokens",
+        "advanced": true
+      },
+      "defaultChunkOverlapTokens": {
+        "label": "Default Chunk Overlap Tokens",
+        "advanced": true
+      },
+      "enableFts": {
+        "label": "Enable FTS5"
+      },
+      "vectorMode": {
+        "label": "Vector Mode",
+        "advanced": true
+      },
+      "sqliteVecExtensionPath": {
+        "label": "sqlite-vec Extension Path",
+        "advanced": true
+      }
+    }
+  }
+}
