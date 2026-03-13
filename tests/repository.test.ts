@@ -150,4 +150,92 @@ describe('SqliteDocumentRepository', () => {
     expect(chunkRow.ends_at_char).toBeGreaterThan(chunkRow.starts_at_char);
     expect(chunkRow.chunk_kind).toBe('body');
   });
+
+  it('applies extended filters to document and chunk search', async () => {
+    const { repository } = makeRepository();
+
+    await repository.saveDocument({
+      sourceType: 'cbr',
+      sourceName: 'Bank of Russia',
+      title: 'Official rates note',
+      documentType: 'press_release',
+      url: 'https://cbr.ru/test/official-rates',
+      publishedAt: '2026-02-13T10:00:00Z',
+      collectedAt: '2026-02-13T10:05:00Z',
+      language: 'ru',
+      country: 'RU',
+      textRaw: 'Rates inflation liquidity official guidance from the central bank.',
+      provenance: {
+        sourcePriority: 'primary',
+        isOfficialSource: true,
+        retrievedVia: 'html',
+        trustScore: 0.95,
+      },
+    });
+
+    await repository.saveDocument({
+      sourceType: 'econs',
+      sourceName: 'Econs',
+      title: 'Secondary rates analysis',
+      documentType: 'analysis',
+      url: 'https://econs.online/test/secondary-rates',
+      publishedAt: '2026-02-14T10:00:00Z',
+      collectedAt: '2026-02-14T10:05:00Z',
+      language: 'ru',
+      country: 'RU',
+      textRaw: 'Rates inflation markets discussion by economists and analysts.',
+      provenance: {
+        sourcePriority: 'secondary',
+        isOfficialSource: false,
+        retrievedVia: 'html',
+        trustScore: 0.55,
+      },
+    });
+
+    const officialHits = repository.searchDocuments({
+      query: 'rates',
+      sourceType: 'cbr',
+      sourceName: 'Bank of Russia',
+      documentType: 'press_release',
+      language: 'ru',
+      country: 'RU',
+      sourcePriority: 'primary',
+      isOfficialSource: true,
+      retrievedVia: 'html',
+      embeddingStatus: 'skipped',
+      minTrustScore: 0.9,
+      publishedBefore: '2026-02-13T12:00:00Z',
+      collectedBefore: '2026-02-13T12:00:00Z',
+    });
+    expect(officialHits).toHaveLength(1);
+    expect(officialHits[0]?.title).toBe('Official rates note');
+
+    const secondaryHits = repository.searchDocuments({
+      query: 'rates',
+      sourceType: 'econs',
+      sourceName: 'Econs',
+      documentType: 'analysis',
+      sourcePriority: 'secondary',
+      isOfficialSource: false,
+      minTrustScore: 0.5,
+      publishedAfter: '2026-02-14T00:00:00Z',
+      collectedAfter: '2026-02-14T00:00:00Z',
+    });
+    expect(secondaryHits).toHaveLength(1);
+    expect(secondaryHits[0]?.title).toBe('Secondary rates analysis');
+
+    const chunkHits = repository.searchChunks({
+      query: 'liquidity',
+      sourceName: 'Bank of Russia',
+      sourceType: 'cbr',
+      documentType: 'press_release',
+      chunkKind: 'body',
+      chunkEmbeddingStatus: 'skipped',
+      embeddingStatus: 'skipped',
+      isOfficialSource: true,
+      minTrustScore: 0.9,
+    });
+    expect(chunkHits).toHaveLength(1);
+    expect(chunkHits[0]?.title).toBe('Official rates note');
+  });
 });

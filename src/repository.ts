@@ -414,7 +414,19 @@ export class SqliteDocumentRepository {
       JOIN documents d ON d.id = documents_fts.document_id
       WHERE documents_fts MATCH ?
         AND (? IS NULL OR d.source_type = ?)
+        AND (? IS NULL OR d.source_name = ?)
         AND (? IS NULL OR d.document_type = ?)
+        AND (? IS NULL OR d.language = ?)
+        AND (? IS NULL OR d.country = ?)
+        AND (? IS NULL OR d.source_priority = ?)
+        AND (? IS NULL OR d.is_official_source = ?)
+        AND (? IS NULL OR d.retrieved_via = ?)
+        AND (? IS NULL OR d.embedding_status = ?)
+        AND (? IS NULL OR d.trust_score >= ?)
+        AND (? IS NULL OR d.published_at >= ?)
+        AND (? IS NULL OR d.published_at <= ?)
+        AND (? IS NULL OR d.collected_at >= ?)
+        AND (? IS NULL OR d.collected_at <= ?)
       ORDER BY score
       LIMIT ?
     `;
@@ -423,8 +435,32 @@ export class SqliteDocumentRepository {
       input.query,
       input.sourceType ?? null,
       input.sourceType ?? null,
+      input.sourceName ?? null,
+      input.sourceName ?? null,
       input.documentType ?? null,
       input.documentType ?? null,
+      input.language ?? null,
+      input.language ?? null,
+      input.country ?? null,
+      input.country ?? null,
+      input.sourcePriority ?? null,
+      input.sourcePriority ?? null,
+      typeof input.isOfficialSource === 'boolean' ? Number(input.isOfficialSource) : null,
+      typeof input.isOfficialSource === 'boolean' ? Number(input.isOfficialSource) : null,
+      input.retrievedVia ?? null,
+      input.retrievedVia ?? null,
+      input.embeddingStatus ?? null,
+      input.embeddingStatus ?? null,
+      input.minTrustScore ?? null,
+      input.minTrustScore ?? null,
+      input.publishedAfter ?? null,
+      input.publishedAfter ?? null,
+      input.publishedBefore ?? null,
+      input.publishedBefore ?? null,
+      input.collectedAfter ?? null,
+      input.collectedAfter ?? null,
+      input.collectedBefore ?? null,
+      input.collectedBefore ?? null,
       limit,
     ) as unknown as DocumentSearchRow[];
 
@@ -458,7 +494,21 @@ export class SqliteDocumentRepository {
       JOIN documents d ON d.id = c.document_id
       WHERE document_chunks_fts MATCH ?
         AND (? IS NULL OR d.source_type = ?)
+        AND (? IS NULL OR d.source_name = ?)
         AND (? IS NULL OR d.document_type = ?)
+        AND (? IS NULL OR d.language = ?)
+        AND (? IS NULL OR d.country = ?)
+        AND (? IS NULL OR d.source_priority = ?)
+        AND (? IS NULL OR d.is_official_source = ?)
+        AND (? IS NULL OR d.retrieved_via = ?)
+        AND (? IS NULL OR d.embedding_status = ?)
+        AND (? IS NULL OR d.trust_score >= ?)
+        AND (? IS NULL OR d.published_at >= ?)
+        AND (? IS NULL OR d.published_at <= ?)
+        AND (? IS NULL OR d.collected_at >= ?)
+        AND (? IS NULL OR d.collected_at <= ?)
+        AND (? IS NULL OR c.chunk_kind = ?)
+        AND (? IS NULL OR c.embedding_status = ?)
       ORDER BY score
       LIMIT ?
     `;
@@ -467,8 +517,36 @@ export class SqliteDocumentRepository {
       input.query,
       input.sourceType ?? null,
       input.sourceType ?? null,
+      input.sourceName ?? null,
+      input.sourceName ?? null,
       input.documentType ?? null,
       input.documentType ?? null,
+      input.language ?? null,
+      input.language ?? null,
+      input.country ?? null,
+      input.country ?? null,
+      input.sourcePriority ?? null,
+      input.sourcePriority ?? null,
+      typeof input.isOfficialSource === 'boolean' ? Number(input.isOfficialSource) : null,
+      typeof input.isOfficialSource === 'boolean' ? Number(input.isOfficialSource) : null,
+      input.retrievedVia ?? null,
+      input.retrievedVia ?? null,
+      input.embeddingStatus ?? null,
+      input.embeddingStatus ?? null,
+      input.minTrustScore ?? null,
+      input.minTrustScore ?? null,
+      input.publishedAfter ?? null,
+      input.publishedAfter ?? null,
+      input.publishedBefore ?? null,
+      input.publishedBefore ?? null,
+      input.collectedAfter ?? null,
+      input.collectedAfter ?? null,
+      input.collectedBefore ?? null,
+      input.collectedBefore ?? null,
+      input.chunkKind ?? null,
+      input.chunkKind ?? null,
+      input.chunkEmbeddingStatus ?? null,
+      input.chunkEmbeddingStatus ?? null,
       limit,
     ) as unknown as ChunkSearchRow[];
 

@@ -4,6 +4,7 @@
   "description": "Buffered document storage for OpenClaw using SQLite, FTS5, chunking, optional OpenAI-compatible embeddings, and future sqlite-vec support.",
   "version": "0.1.0",
   "kind": "extension",
+  "skills": ["./skills"],
   "configSchema": {
     "type": "object",
     "additionalProperties": false,

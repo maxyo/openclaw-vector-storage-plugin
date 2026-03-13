@@ -188,7 +188,19 @@ export interface SearchDocumentsInput {
   query: string;
   limit?: number;
   sourceType?: DocumentSourceType;
+  sourceName?: string;
   documentType?: DocumentType;
+  language?: string;
+  country?: string;
+  sourcePriority?: SourcePriority;
+  isOfficialSource?: boolean;
+  retrievedVia?: RetrievedVia;
+  embeddingStatus?: EmbeddingGenerationStatus;
+  minTrustScore?: number;
+  publishedAfter?: string;
+  publishedBefore?: string;
+  collectedAfter?: string;
+  collectedBefore?: string;
 }
 
 export interface DocumentSearchHit {
@@ -206,7 +218,21 @@ export interface SearchChunksInput {
   query: string;
   limit?: number;
   sourceType?: DocumentSourceType;
+  sourceName?: string;
   documentType?: DocumentType;
+  language?: string;
+  country?: string;
+  sourcePriority?: SourcePriority;
+  isOfficialSource?: boolean;
+  retrievedVia?: RetrievedVia;
+  embeddingStatus?: EmbeddingGenerationStatus;
+  minTrustScore?: number;
+  publishedAfter?: string;
+  publishedBefore?: string;
+  collectedAfter?: string;
+  collectedBefore?: string;
+  chunkKind?: ChunkKind;
+  chunkEmbeddingStatus?: EmbeddingGenerationStatus;
 }
 
 export interface ChunkSearchHit {
