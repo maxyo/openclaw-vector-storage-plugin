@@ -4,6 +4,7 @@ import { join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 import { openDatabase } from '../src/database.js';
 import { SqliteDocumentRepository } from '../src/repository.js';
+import type { EmbeddingClient } from '../src/embeddings.js';
 import { resolveConfig } from '../src/config.js';
 
 const cleanupPaths: string[] = [];
@@ -12,13 +13,13 @@ afterEach(() => {
   cleanupPaths.length = 0;
 });
 
-function makeRepository() {
+function makeRepository(embeddingClient?: EmbeddingClient) {
   const dir = mkdtempSync(join(tmpdir(), 'sqlite-doc-store-'));
   cleanupPaths.push(dir);
   const dbPath = join(dir, 'documents.sqlite');
   const config = resolveConfig({ dbPath });
   const db = openDatabase(dbPath);
-  return { db, repository: new SqliteDocumentRepository(db, config) };
+  return { db, repository: new SqliteDocumentRepository(db, config, embeddingClient) };
 }
 
 describe('SqliteDocumentRepository', () => {
@@ -237,5 +238,57 @@ describe('SqliteDocumentRepository', () => {
     });
     expect(chunkHits).toHaveLength(1);
     expect(chunkHits[0]?.title).toBe('Official rates note');
+  });
+
+  it('sanitizes free-text FTS queries instead of passing raw syntax into MATCH', async () => {
+    const { repository } = makeRepository();
+
+    await repository.saveDocument({
+      sourceType: 'manual',
+      sourceName: 'test',
+      title: 'Rates with punctuation',
+      documentType: 'analysis',
+      textRaw: 'Rates inflation liquidity and policy guidance.',
+    });
+
+    expect(() => repository.searchDocuments({ query: 'rates: inflation "policy"' })).not.toThrow();
+    expect(repository.searchDocuments({ query: 'rates: inflation "policy"' })[0]?.title).toBe('Rates with punctuation');
+    expect(() => repository.searchChunks({ query: 'liquidity (policy)' })).not.toThrow();
+    expect(repository.searchChunks({ query: 'liquidity (policy)' })[0]?.title).toBe('Rates with punctuation');
+  });
+
+  it('synchronizes document embedding status from chunk-level truth when embeddings already exist', async () => {
+    const embeddingClient: EmbeddingClient = {
+      model: 'test-embedding-model',
+      async embedTexts(texts: string[]): Promise<number[][]> {
+        return texts.map(() => [0.1, 0.2, 0.3]);
+      },
+    };
+
+    const { db, repository } = makeRepository(embeddingClient);
+    const saved = await repository.saveDocument({
+      sourceType: 'manual',
+      sourceName: 'test',
+      title: 'Embedding sync document',
+      documentType: 'analysis',
+      textRaw: 'A sufficiently long body for chunk embedding synchronization checks.',
+    });
+
+    expect(saved.embeddingStatus).toBe('generated');
+
+    db.prepare(
+      `UPDATE documents SET embedding_status = 'skipped', embedding_model = NULL WHERE id = ?`
+    ).run(saved.documentId);
+
+    const second = await repository.generateEmbeddingsForDocument(saved.documentId);
+    expect(second.embeddingStatus).toBe('generated');
+    expect(second.embeddingModel).toBe('test-embedding-model');
+
+    const row = db.prepare(`SELECT embedding_status, embedding_model FROM documents WHERE id = ?`).get(saved.documentId) as {
+      embedding_status: string;
+      embedding_model: string | null;
+    };
+    expect(row.embedding_status).toBe('generated');
+    expect(row.embedding_model).toBe('test-embedding-model');
   });
 });

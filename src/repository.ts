@@ -55,6 +55,12 @@ interface DocumentEmbeddingStateRow {
   embedding_model: string | null;
 }
 
+interface ChunkEmbeddingSummaryRow {
+  total_chunks: number;
+  chunks_with_embeddings: number;
+  embedding_model: string | null;
+}
+
 function nowIso(): string {
   return new Date().toISOString();
 }
@@ -134,6 +140,21 @@ function inferRetrievedVia(sourceType: SaveDocumentInput['sourceType']): Retriev
     default:
       return 'other';
   }
+}
+
+function normalizeFtsQuery(query: string): string | undefined {
+  const tokens = query
+    .normalize('NFKC')
+    .match(/[\p{L}\p{N}]+/gu)
+    ?.map((token) => token.trim())
+    .filter((token) => token.length > 0);
+
+  if (!tokens || tokens.length === 0) {
+    return undefined;
+  }
+
+  const uniqueTokens = Array.from(new Set(tokens)).slice(0, 12);
+  return uniqueTokens.map((token) => `"${token.replace(/"/g, '""')}"`).join(' OR ');
 }
 
 export class SqliteDocumentRepository {
@@ -335,12 +356,38 @@ export class SqliteDocumentRepository {
       .all(documentId) as unknown as ChunkEmbeddingRow[];
 
     if (rows.length === 0) {
+      const summary = this.db
+        .prepare(
+          `SELECT
+             COUNT(*) AS total_chunks,
+             SUM(CASE WHEN embedding_json IS NOT NULL AND embedding_json != '' THEN 1 ELSE 0 END) AS chunks_with_embeddings,
+             MIN(embedding_model) AS embedding_model
+           FROM document_chunks
+           WHERE document_id = ?`
+        )
+        .get(documentId) as unknown as ChunkEmbeddingSummaryRow;
+
+      const allChunksEmbedded =
+        summary.total_chunks > 0 && summary.total_chunks === Number(summary.chunks_with_embeddings ?? 0);
+
+      if (allChunksEmbedded) {
+        const processedAt = nowIso();
+        this.db.prepare(
+          `UPDATE documents
+           SET embedding_status = 'generated', embedding_model = ?, processing_error = NULL,
+               last_processed_at = ?, status = 'embedded', updated_at = ?
+           WHERE id = ?`
+        ).run(summary.embedding_model, processedAt, processedAt, documentId);
+      }
+
       return {
         documentId,
         chunkCount,
         embeddingsGenerated: 0,
-        embeddingStatus: currentState?.embedding_status ?? 'generated',
-        ...(currentState?.embedding_model ? { embeddingModel: currentState.embedding_model } : {}),
+        embeddingStatus: allChunksEmbedded ? 'generated' : currentState?.embedding_status ?? 'generated',
+        ...((allChunksEmbedded ? summary.embedding_model : currentState?.embedding_model)
+          ? { embeddingModel: (allChunksEmbedded ? summary.embedding_model : currentState?.embedding_model) as string }
+          : {}),
       };
     }
 
@@ -400,6 +447,10 @@ export class SqliteDocumentRepository {
 
   public searchDocuments(input: SearchDocumentsInput): DocumentSearchHit[] {
     const limit = input.limit ?? 10;
+    const normalizedQuery = normalizeFtsQuery(input.query);
+    if (!normalizedQuery) {
+      return [];
+    }
     const sql = `
       SELECT
         d.id AS document_id,
@@ -432,7 +483,7 @@ export class SqliteDocumentRepository {
     `;
 
     const rows = this.db.prepare(sql).all(
-      input.query,
+      normalizedQuery,
       input.sourceType ?? null,
       input.sourceType ?? null,
       input.sourceName ?? null,
@@ -478,6 +529,10 @@ export class SqliteDocumentRepository {
 
   public searchChunks(input: SearchChunksInput): ChunkSearchHit[] {
     const limit = input.limit ?? 10;
+    const normalizedQuery = normalizeFtsQuery(input.query);
+    if (!normalizedQuery) {
+      return [];
+    }
     const sql = `
       SELECT
         c.id AS chunk_id,
@@ -514,7 +569,7 @@ export class SqliteDocumentRepository {
     `;
 
     const rows = this.db.prepare(sql).all(
-      input.query,
+      normalizedQuery,
       input.sourceType ?? null,
       input.sourceType ?? null,
       input.sourceName ?? null,
