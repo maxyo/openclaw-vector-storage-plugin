@@ -2,6 +2,21 @@ import { describe, expect, it } from 'vitest';
 import { getSourceProfile } from '../src/ingest/source-profiles.js';
 
 describe('source profiles', () => {
+  it('matches Marketaux API and returns aggregator defaults', () => {
+    const profile = getSourceProfile('https://api.marketaux.com/v1/news/all?symbols=OFZ,RGBI&language=ru');
+
+    expect(profile?.id).toBe('marketaux');
+    expect(profile?.sourceType).toBe('marketaux');
+    expect(profile?.sourceName).toBe('Marketaux');
+    expect(profile?.documentType).toBe('news');
+    expect(profile?.provenanceDefaults?.sourcePriority).toBe('tertiary');
+    expect(profile?.provenanceDefaults?.isOfficialSource).toBe(false);
+    expect(profile?.provenanceDefaults?.retrievedVia).toBe('api');
+    expect(profile?.provenanceDefaults?.sourceSection).toBe('/v1/news/all');
+    expect(profile?.provenanceDefaults?.trustScore).toBe(0.72);
+    expect(profile?.metadataDefaults?.['source_profile']).toBe('marketaux');
+  });
+
   it('matches cbr.ru and returns extraction/provenance defaults', () => {
     const profile = getSourceProfile('https://cbr.ru/press/pr/?file=13022026_133000key.htm');
 

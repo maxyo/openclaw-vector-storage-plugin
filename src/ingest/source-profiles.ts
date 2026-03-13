@@ -31,6 +31,39 @@ function inferCbrDocumentType(url: URL): DocumentType {
 
 const SOURCE_PROFILES: SourceProfileDefinition[] = [
   {
+    id: 'marketaux',
+    matches(url) {
+      return (
+        url.hostname === 'api.marketaux.com' ||
+        url.hostname === 'marketaux.com' ||
+        url.hostname === 'www.marketaux.com' ||
+        url.hostname.endsWith('.marketaux.com')
+      );
+    },
+    build(url) {
+      const isApi = url.hostname === 'api.marketaux.com';
+      return {
+        id: 'marketaux',
+        sourceType: 'marketaux',
+        sourceName: 'Marketaux',
+        documentType: 'news',
+        metadataDefaults: {
+          source_profile: 'marketaux',
+          feed_kind: 'news_api',
+          provider: 'Marketaux',
+        },
+        provenanceDefaults: {
+          sourcePublisher: 'Marketaux',
+          sourcePriority: 'tertiary',
+          isOfficialSource: false,
+          retrievedVia: isApi ? 'api' : 'html',
+          ...(isApi ? { sourceSection: url.pathname } : {}),
+          trustScore: 0.72,
+        },
+      };
+    },
+  },
+  {
     id: 'cbr',
     matches(url) {
       return url.hostname === 'cbr.ru' || url.hostname.endsWith('.cbr.ru');

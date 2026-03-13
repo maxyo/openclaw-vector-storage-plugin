@@ -1,6 +1,6 @@
 ---
 name: sqlite-doc-store-tools
-description: Use for sqlite-doc-store tasks: ingesting documents, checking stored records, generating/backfilling embeddings, and searching documents/chunks with metadata, trust, time, and source filters.
+description: "Use for sqlite-doc-store tasks: ingesting documents, checking stored records, generating/backfilling embeddings, and searching documents/chunks with metadata, trust, time, and source filters."
 metadata: { "openclaw": { "emoji": "🗃️" } }
 ---
 
