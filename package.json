@@ -1,5 +1,5 @@
 {
-  "name": "openclaw-plugin-sqlite-doc-store",
+  "name": "@maxyo/sqlite-doc-store",
   "version": "0.1.0",
   "private": true,
   "description": "OpenClaw plugin for buffered document storage on SQLite with chunking, FTS search, ingestion scripts, embeddings, and future sqlite-vec support.",
